@@ -2,6 +2,7 @@ from pyfiglet import Figlet
 import socket
 import time
 import re
+import threading
 
 # банер:
 custom_fig = Figlet(font='standard')
@@ -52,25 +53,27 @@ class Serp():
     def use_scan_port(self,ip,port):
         self.port_min = port[0]
         self.port_max = port[1]
-        for prt in range(self.port_min,self.port_max+1):
-            self.scan_port(ip, prt)
-
+        # Создание потоков для сканирования портов
+        threads = []
+        try:
+            for prt in range(self.port_min,self.port_max+1):
+                thread = threading.Thread(target=self.scan_port, args=(ip,prt))
+                threads.append(thread)
+                thread.start()
+                #self.scan_port(ip, prt)
+            # Ожидание завершения всех потоков
+            for thread in threads:
+                thread.join()
+        except KeyboardInterrupt:
+            print("Сканирование остановлено.")
+            exit()
 
 skan = Serp()# создаем объект класса
+
 ip = skan.check_ip()#чекаем ip
 port = skan.check_port()#чекаем порты
-
 start_time = time.time()#время начала проги
-
 skan.use_scan_port(ip,port)
-
 end_time = time.time()#время конца проги
 execution_time = end_time - start_time
 print("Время выполнения программы:", execution_time, "секунд")
-# # Этот скрипт использует API-интерфейс сокета, чтобы узнать, можно ли подключиться к порту.
-# # TO DO:
-# # 1. для эффективности сканирования добавить SYN сканирование,используя уже сокеты не на прикладном уровне,а на уровне сетевых интерфейсов?
-# # это позволит:
-# # делать различия между отфильтрованными и закрытыми портами. Также проводить сканирование более быстро и скрытно
-# # 2. Выводить список служб на порте
-# # 3. Выводить протокол tcp/udp
